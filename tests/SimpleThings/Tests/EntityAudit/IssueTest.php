@@ -31,6 +31,7 @@ class IssueTest extends BaseTest
     protected $schemaEntities = array(
         'SimpleThings\EntityAudit\Tests\EscapedColumnsEntity',
         'SimpleThings\EntityAudit\Tests\Issue87Project',
+        'SimpleThings\EntityAudit\Tests\Issue87ProjectTemplate', //Added
         'SimpleThings\EntityAudit\Tests\Issue87ProjectComment',
         'SimpleThings\EntityAudit\Tests\Issue87AbstractProject',
         'SimpleThings\EntityAudit\Tests\Issue87Organization'
@@ -39,6 +40,7 @@ class IssueTest extends BaseTest
     protected $auditedEntities = array(
         'SimpleThings\EntityAudit\Tests\EscapedColumnsEntity',
         'SimpleThings\EntityAudit\Tests\Issue87Project',
+        'SimpleThings\EntityAudit\Tests\Issue87ProjectTemplate', //Added
         'SimpleThings\EntityAudit\Tests\Issue87ProjectComment',
         'SimpleThings\EntityAudit\Tests\Issue87AbstractProject',
         'SimpleThings\EntityAudit\Tests\Issue87Organization'
@@ -73,6 +75,13 @@ class IssueTest extends BaseTest
         $this->em->persist($comment);
         $this->em->flush();
 
+        //Create a project template that is not associated with the organisation (ie join column is null)
+        $template = new Issue87ProjectTemplate();
+        $template->setSomeProperty('some template property');
+        $template->setTitle('test template');
+        $this->em->persist($template);
+        $this->em->flush();
+
         $auditReader = $this->auditManager->createAuditReader($this->em);
 
         $auditedProject = $auditReader->find(get_class($project), $project->getId(), 1);
@@ -98,13 +107,21 @@ class IssueTest extends BaseTest
  */
 class Issue87ProjectComment
 {
-    /** @ORM\Id @ORM\Column(type="integer") @ORM\GeneratedValue(strategy="AUTO") */
+    /**
+     * @ORM\Id @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
     protected $id;
 
-    /** @ORM\ManytoOne(targetEntity="Issue87AbstractProject") @ORM\JoinColumn(name="a_join_column") */
+    /**
+     * @ORM\ManytoOne(targetEntity="Issue87AbstractProject")
+     * @ORM\JoinColumn(name="a_join_column")
+     */
     protected $project;
 
-    /** @ORM\Column(type="text") */
+    /**
+     * @ORM\Column(type="text")
+     */
     protected $text;
 
     public function getId()
@@ -138,11 +155,14 @@ class Issue87ProjectComment
  * @ORM\Entity(repositoryClass="Umm\ProjectBundle\Repository\AbstractProjectRepository")
  * @ORM\InheritanceType("JOINED")
  * @ORM\DiscriminatorColumn(name="discr", type="string")
- * @ORM\DiscriminatorMap({"project" = "Issue87Project"})
+ * @ORM\DiscriminatorMap({"project" = "Issue87Project", "template" = "Issue87ProjectTemplate"})
  */
 abstract class Issue87AbstractProject
 {
-    /** @ORM\Id @ORM\Column(type="integer") @ORM\GeneratedValue(strategy="AUTO") */
+    /**
+     * @ORM\Id @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
     protected $id;
 
     /** @ORM\Column(name="title", type="string", length=50) */
@@ -193,8 +213,33 @@ abstract class Issue87AbstractProject
     }
 }
 
-/** @ORM\Entity @ORM\Table(name="project_project") */
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="project_project")
+ */
 class Issue87Project extends Issue87AbstractProject
+{
+    /**
+     * @ORM\Column(type="string")
+     */
+    protected $someProperty;
+
+    public function getSomeProperty()
+    {
+        return $this->someProperty;
+    }
+
+    public function setSomeProperty($someProperty)
+    {
+        $this->someProperty = $someProperty;
+    }
+}
+
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="project_template")
+ */
+class Issue87ProjectTemplate extends Issue87AbstractProject
 {
     /**
      * @ORM\Column(type="string")
@@ -215,7 +260,11 @@ class Issue87Project extends Issue87AbstractProject
 /** @ORM\Entity */
 class Issue87Organization
 {
-    /** @ORM\Id @ORM\Column(type="integer") @ORM\GeneratedValue(strategy="AUTO") */
+    /**
+     * @ORM\Id
+     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
     protected $id;
 
     public function getId()
